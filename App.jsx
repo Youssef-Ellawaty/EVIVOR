@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
-import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Heart, Activity, Thermometer, History as HistoryIcon, 
@@ -203,11 +203,15 @@ const Dashboard = ({ profile }) => {
   useEffect(() => {
     const logger = setInterval(() => {
       if (vitals.bpm > 0) {
-        fetch("/api/vitals", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(vitals)
-        });
+        // Save to localStorage history array
+        const logs = JSON.parse(localStorage.getItem('evivor_history') || '[]');
+        const newLog = {
+          ...vitals,
+          id: Date.now(),
+          timestamp: new Date().toISOString(),
+        };
+        logs.push(newLog);
+        localStorage.setItem('evivor_history', JSON.stringify(logs));
       }
     }, 60000);
     return () => clearInterval(logger);
@@ -287,8 +291,13 @@ const Dashboard = ({ profile }) => {
 };
 
 const HistoryPage = ({ profile }) => {
-  const { data: logs, isLoading } = useQuery({ queryKey: ["/api/vitals"] });
+  const [logs, setLogs] = useState([]);
   const isAr = profile.language === "ar";
+
+  useEffect(() => {
+    const stored = localStorage.getItem('evivor_history');
+    setLogs(stored ? JSON.parse(stored) : []);
+  }, []);
 
   return (
     <div className="p-6 pb-24 space-y-6">
@@ -296,11 +305,11 @@ const HistoryPage = ({ profile }) => {
         <img src={logoImg} alt="Logo" className="w-8 h-8 object-contain" />
         <h1 className="text-2xl font-bold">{isAr ? "سجل المريض" : "Patient History"}</h1>
       </div>
-      {isLoading ? (
-        <div className="flex justify-center p-12"><Activity className="animate-spin text-teal-500" /></div>
+      {logs.length === 0 ? (
+        <div className="flex justify-center p-12 text-slate-400">{isAr ? "لا يوجد بيانات" : "No history available."}</div>
       ) : (
         <div className="space-y-4">
-          {logs?.map((log) => (
+          {logs.map((log) => (
             <GlassCard key={log.id} className="flex justify-between items-center py-4 px-6">
               <div>
                 <div className="text-sm text-slate-400">{new Date(log.timestamp).toLocaleString(isAr ? 'ar-EG' : 'en-US')}</div>
@@ -394,43 +403,45 @@ const ProfilePage = ({ profile, onUpdate }) => {
   );
 };
 
-// --- App Orchestrator ---
 
+// --- App Orchestrator (localStorage version) ---
 function AppContent() {
-  const { data: profile, isLoading, refetch } = useQuery({ queryKey: ["/api/profile"] });
-  const qc = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: async (data) => {
-      const res = await fetch("/api/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-      if (!res.ok) throw new Error("Failed to update profile");
-      return res.json();
-    },
-    onSuccess: (newData) => {
-      qc.setQueryData(["/api/profile"], newData);
-    }
+  const [profile, setProfile] = useState(() => {
+    const stored = localStorage.getItem('evivor_profile');
+    return stored ? JSON.parse(stored) : null;
   });
-
-  if (isLoading) return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><Activity className="animate-spin text-teal-500" /></div>;
+  const [loading, setLoading] = useState(false);
 
   // Set RTL based on profile if it exists
-  if (profile) {
-    document.documentElement.dir = profile.language === "ar" ? "rtl" : "ltr";
-  }
+  useEffect(() => {
+    if (profile) {
+      document.documentElement.dir = profile.language === "ar" ? "rtl" : "ltr";
+    }
+  }, [profile]);
+
+  // Simulate loading for consistency with previous UI
+  useEffect(() => {
+    setLoading(false);
+  }, [profile]);
+
+  const handleProfileUpdate = (data) => {
+    setLoading(true);
+    localStorage.setItem('evivor_profile', JSON.stringify(data));
+    setProfile(data);
+    setLoading(false);
+  };
+
+  if (loading) return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><Activity className="animate-spin text-teal-500" /></div>;
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       {!profile ? (
-        <WelcomePage onComplete={mutation.mutate} />
+        <WelcomePage onComplete={handleProfileUpdate} />
       ) : (
         <>
           <Switch>
             <Route path="/history" component={() => <HistoryPage profile={profile} />} />
-            <Route path="/profile" component={() => <ProfilePage profile={profile} onUpdate={mutation.mutate} />} />
+            <Route path="/profile" component={() => <ProfilePage profile={profile} onUpdate={handleProfileUpdate} />} />
             <Route path="/" component={() => <Dashboard profile={profile} />} />
             <Route component={() => <Dashboard profile={profile} />} />
           </Switch>
