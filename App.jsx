@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { fetchESP32Data } from "./Logic";
-import logoImg from "@assets/unnamed-removebg-preview_1768896144305.png";
+
+import logoImg from "./logo.png";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -110,7 +111,7 @@ const WelcomePage = ({ onComplete }) => {
             key="lang" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
             className="text-center w-full max-w-md flex flex-col items-center"
           >
-            <img src={logoImg} alt="EVIVOR Logo" className="w-32 h-32 mb-8 object-contain" />
+            <img src={logoImg} alt="EVIVOR Logo" className="w-64 h-64 mb-12 object-contain" />
             <h1 className="text-4xl font-bold mb-12 tracking-tight">EVIVOR</h1>
             <p className="text-slate-400 mb-8">{t.selectLang}</p>
             <div className="grid grid-cols-2 gap-4 w-full">
@@ -236,7 +237,7 @@ const Dashboard = ({ profile }) => {
 
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-3">
-          <img src={logoImg} alt="Logo" className="w-10 h-10 object-contain" />
+          <img src={logoImg} alt="Logo" className="w-28 h-28 object-contain" />
           <div>
             <h1 className="text-xl font-bold">{t.vitals}</h1>
             <p className="text-teal-400 text-xs flex items-center gap-2">
@@ -302,7 +303,7 @@ const HistoryPage = ({ profile }) => {
   return (
     <div className="p-6 pb-24 space-y-6">
       <div className="flex items-center gap-3 mb-8">
-        <img src={logoImg} alt="Logo" className="w-8 h-8 object-contain" />
+        <img src={logoImg} alt="Logo" className="w-24 h-24 object-contain" />
         <h1 className="text-2xl font-bold">{isAr ? "سجل المريض" : "Patient History"}</h1>
       </div>
       {logs.length === 0 ? (
@@ -349,7 +350,7 @@ const ProfilePage = ({ profile, onUpdate }) => {
     <div className="p-6 pb-24 space-y-6">
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-3">
-          <img src={logoImg} alt="Logo" className="w-8 h-8 object-contain" />
+          <img src={logoImg} alt="Logo" className="w-24 h-24 object-contain" />
           <h1 className="text-2xl font-bold">{t.title}</h1>
         </div>
         <button 
